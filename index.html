@@ -364,7 +364,7 @@
             <!-- Mode Toggle -->
             <div class="settings-section">
                 <label class="settings-label">AI Mode</label>
-                <div class="mode-toggle">
+                <div class="mode-toggle mode-toggle-3">
                     <label class="mode-option">
                         <input type="radio" name="cfg_mode" id="cfg_mode" value="lmstudio"
                             onchange="toggleSettingsMode('lmstudio')">
@@ -372,6 +372,15 @@
                             <span class="mode-icon">⚡</span>
                             <span class="mode-name">LM Studio</span>
                             <span class="mode-desc">Local model, no cost</span>
+                        </div>
+                    </label>
+                    <label class="mode-option">
+                        <input type="radio" name="cfg_mode" value="aistudio"
+                            onchange="toggleSettingsMode('aistudio')">
+                        <div class="mode-card">
+                            <span class="mode-icon">✦</span>
+                            <span class="mode-name">Google AI Studio</span>
+                            <span class="mode-desc">Gemini — paste key &amp; go</span>
                         </div>
                     </label>
                     <label class="mode-option">
@@ -401,6 +410,28 @@
                     <input class="settings-input" type="text" id="cfg_lmstudio_model"
                         placeholder="meta-llama-3.1-8b-instruct">
                     <p class="settings-hint">Copy the exact model identifier from LM Studio</p>
+                </div>
+            </div>
+
+            <!-- Google AI Studio Section -->
+            <div id="aistudio_section" style="display:none">
+                <div class="settings-section">
+                    <div class="aistudio-header">
+                        <span class="aistudio-logo">✦</span>
+                        <div>
+                            <p class="aistudio-title">Google AI Studio — Gemini</p>
+                            <p class="aistudio-sub">Paste your key. Model &amp; URL handled automatically.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <label class="settings-label" for="cfg_gemini_key">AI Studio API Key</label>
+                    <input class="settings-input settings-input-big" type="password" id="cfg_gemini_key"
+                        placeholder="AIza…">
+                    <p class="settings-hint">
+                        Get a free key at <strong>aistudio.google.com</strong> → Get API key → Create API key.<br>
+                        Stored locally in your browser only.
+                    </p>
                 </div>
             </div>
 

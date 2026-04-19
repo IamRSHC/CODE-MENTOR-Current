@@ -1530,3 +1530,53 @@ body {
     transition: opacity 0.15s;
 }
 .settings-save:hover { opacity: 0.85; }
+
+/* ── 3-column mode toggle ── */
+.mode-toggle-3 {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+/* ── Google AI Studio config badge ── */
+.config-badge.aistudio {
+    background: rgba(66, 133, 244, 0.12);
+    color: #7baaf7;
+    border: 1px solid rgba(66, 133, 244, 0.28);
+}
+
+/* ── AI Studio section ── */
+.aistudio-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(66, 133, 244, 0.07);
+    border: 1px solid rgba(66, 133, 244, 0.18);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 4px;
+}
+.aistudio-logo {
+    font-size: 22px;
+    line-height: 1;
+    flex-shrink: 0;
+    color: #7baaf7;
+}
+.aistudio-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: #e5e7eb;
+    margin: 0 0 2px;
+}
+.aistudio-sub {
+    font-size: 10px;
+    color: rgba(255,255,255,0.4);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Big key input for AI Studio */
+.settings-input-big {
+    font-size: 13px;
+    padding: 11px 14px;
+    letter-spacing: 0.04em;
+}

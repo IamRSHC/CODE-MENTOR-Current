@@ -34,6 +34,7 @@ const DEFAULT_CONFIG = {
     mode: 'lmstudio',
     lmstudio_url: 'http://localhost:1234',
     lmstudio_model: 'meta-llama-3.1-8b-instruct',
+    gemini_key: '',                                       // Google AI Studio
     api_url: 'https://openrouter.ai/api',
     api_key: '',
     api_model: 'meta-llama/llama-3.1-8b-instruct:free'
@@ -61,28 +62,47 @@ function saveLLMConfig(cfg) {
 async function askLLM(userPrompt, systemPrompt = 'You are a coding mentor. Give hints only.') {
     const cfg = getLLMConfig();
 
+    /* ── Google AI Studio (Gemini) ── */
+    if (cfg.mode === 'aistudio') {
+        if (!cfg.gemini_key) throw new Error('NO_API_KEY');
+
+        const GEMINI_MODEL = 'gemini-2.0-flash';
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${cfg.gemini_key}`;
+
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+                generationConfig: { temperature: 0.7, maxOutputTokens: 512 }
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err?.error?.message || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const parts = data?.candidates?.[0]?.content?.parts || [];
+        return parts.filter(p => p.text && !p.thought).map(p => p.text).join('');
+    }
+
+    /* ── OpenAI-compatible (LM Studio or API Key) ── */
     const isLMStudio = cfg.mode === 'lmstudio';
     const baseUrl    = isLMStudio ? cfg.lmstudio_url : cfg.api_url;
     const model      = isLMStudio ? cfg.lmstudio_model : cfg.api_model;
 
-    if (!isLMStudio && !cfg.api_key) {
-        throw new Error('NO_API_KEY');
-    }
+    if (!isLMStudio && !cfg.api_key) throw new Error('NO_API_KEY');
 
     const headers = { 'Content-Type': 'application/json' };
     if (!isLMStudio && cfg.api_key) {
         headers['Authorization'] = `Bearer ${cfg.api_key}`;
+        headers['HTTP-Referer']  = window.location.origin;
+        headers['X-Title']       = 'CodeMentor AI';
     }
 
-    // Some OpenRouter-specific headers (ignored by other providers)
-    if (!isLMStudio) {
-        headers['HTTP-Referer'] = window.location.origin;
-        headers['X-Title'] = 'CodeMentor AI';
-    }
-
-    const endpoint = baseUrl.replace(/\/$/, '') + '/v1/chat/completions';
-
-    const res = await fetch(endpoint, {
+    const res = await fetch(baseUrl.replace(/\/$/, '') + '/v1/chat/completions', {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -98,8 +118,7 @@ async function askLLM(userPrompt, systemPrompt = 'You are a coding mentor. Give 
 
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        const msg = err?.error?.message || `HTTP ${res.status}`;
-        throw new Error(msg);
+        throw new Error(err?.error?.message || `HTTP ${res.status}`);
     }
 
     const data = await res.json();
@@ -475,7 +494,7 @@ async function analyzeCode() {
 
     // Check config before running
     const cfg = getLLMConfig();
-    if (cfg.mode === 'apikey' && !cfg.api_key) {
+    if ((cfg.mode === 'apikey' && !cfg.api_key) || (cfg.mode === 'aistudio' && !cfg.gemini_key)) {
         openSettings();
         showToast('API Key missing — open Settings to configure', 'error');
         return;
@@ -676,13 +695,17 @@ function openSettings() {
     const cfg = getLLMConfig();
     const modal = document.getElementById('settingsModal');
 
+    // Set the radio that matches current mode
+    const radios = document.querySelectorAll('input[name="cfg_mode"]');
+    radios.forEach(r => { r.checked = (r.value === cfg.mode); });
+
     // Populate fields
-    document.getElementById('cfg_mode').value          = cfg.mode;
-    document.getElementById('cfg_lmstudio_url').value  = cfg.lmstudio_url;
-    document.getElementById('cfg_lmstudio_model').value= cfg.lmstudio_model;
-    document.getElementById('cfg_api_url').value       = cfg.api_url;
-    document.getElementById('cfg_api_key').value       = cfg.api_key;
-    document.getElementById('cfg_api_model').value     = cfg.api_model;
+    document.getElementById('cfg_lmstudio_url').value   = cfg.lmstudio_url;
+    document.getElementById('cfg_lmstudio_model').value = cfg.lmstudio_model;
+    document.getElementById('cfg_gemini_key').value     = cfg.gemini_key || '';
+    document.getElementById('cfg_api_url').value        = cfg.api_url;
+    document.getElementById('cfg_api_key').value        = cfg.api_key;
+    document.getElementById('cfg_api_model').value      = cfg.api_model;
 
     toggleSettingsMode(cfg.mode);
     modal.classList.add('open');
@@ -693,15 +716,9 @@ function closeSettings() {
 }
 
 function toggleSettingsMode(mode) {
-    const lmSection  = document.getElementById('lmstudio_section');
-    const apiSection = document.getElementById('apikey_section');
-    if (mode === 'lmstudio') {
-        lmSection.style.display  = 'block';
-        apiSection.style.display = 'none';
-    } else {
-        lmSection.style.display  = 'none';
-        apiSection.style.display = 'block';
-    }
+    document.getElementById('lmstudio_section').style.display  = mode === 'lmstudio'  ? 'block' : 'none';
+    document.getElementById('aistudio_section').style.display  = mode === 'aistudio'  ? 'block' : 'none';
+    document.getElementById('apikey_section').style.display    = mode === 'apikey'    ? 'block' : 'none';
 }
 
 function setProviderPreset(provider) {
@@ -719,11 +736,14 @@ function setProviderPreset(provider) {
 }
 
 function saveSettings() {
-    const mode = document.getElementById('cfg_mode').value;
+    const modeRadio = document.querySelector('input[name="cfg_mode"]:checked');
+    const mode = modeRadio ? modeRadio.value : 'lmstudio';
+
     const cfg = {
         mode,
         lmstudio_url:   document.getElementById('cfg_lmstudio_url').value.trim().replace(/\/$/, ''),
         lmstudio_model: document.getElementById('cfg_lmstudio_model').value.trim(),
+        gemini_key:     document.getElementById('cfg_gemini_key').value.trim(),
         api_url:        document.getElementById('cfg_api_url').value.trim().replace(/\/$/, ''),
         api_key:        document.getElementById('cfg_api_key').value.trim(),
         api_model:      document.getElementById('cfg_api_model').value.trim()
@@ -733,11 +753,11 @@ function saveSettings() {
     if (mode === 'lmstudio' && !cfg.lmstudio_url) {
         showToast('LM Studio URL cannot be empty', 'error'); return;
     }
-    if (mode === 'apikey' && !cfg.api_key) {
-        showToast('API Key cannot be empty', 'error'); return;
+    if (mode === 'aistudio' && !cfg.gemini_key) {
+        showToast('Google AI Studio API Key cannot be empty', 'error'); return;
     }
-    if (mode === 'apikey' && !cfg.api_url) {
-        showToast('API URL cannot be empty', 'error'); return;
+    if (mode === 'apikey' && (!cfg.api_key || !cfg.api_url)) {
+        showToast('API URL and Key cannot be empty', 'error'); return;
     }
 
     saveLLMConfig(cfg);
@@ -752,11 +772,13 @@ async function testConnection() {
     btn.textContent = 'Testing…';
 
     // Temporarily apply current form values for the test
-    const mode = document.getElementById('cfg_mode').value;
+    const modeR = document.querySelector('input[name="cfg_mode"]:checked');
+    const mode = modeR ? modeR.value : 'lmstudio';
     const tempCfg = {
         mode,
         lmstudio_url:   document.getElementById('cfg_lmstudio_url').value.trim().replace(/\/$/, ''),
         lmstudio_model: document.getElementById('cfg_lmstudio_model').value.trim(),
+        gemini_key:     document.getElementById('cfg_gemini_key').value.trim(),
         api_url:        document.getElementById('cfg_api_url').value.trim().replace(/\/$/, ''),
         api_key:        document.getElementById('cfg_api_key').value.trim(),
         api_model:      document.getElementById('cfg_api_model').value.trim()
@@ -802,10 +824,13 @@ function updateConfigBadge() {
     if (!badge) return;
 
     if (cfg.mode === 'lmstudio') {
-        badge.textContent = `⚡ LM Studio`;
+        badge.textContent = '⚡ LM Studio';
         badge.className   = 'config-badge lmstudio';
+    } else if (cfg.mode === 'aistudio') {
+        badge.textContent = '✦ Gemini';
+        badge.className   = 'config-badge aistudio';
     } else {
-        const model = cfg.api_model.split('/').pop().split(':')[0];
+        const model = (cfg.api_model || '').split('/').pop().split(':')[0];
         badge.textContent = `🔑 ${model || 'API Key'}`;
         badge.className   = 'config-badge apikey';
     }

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeMentor AI — Adaptive Programming Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="scanline"></div>
+    <div class="bg-grid"></div>
+
+    <!-- Topbar -->
+    <header class="topbar">
+        <div class="topbar-brand">
+            <div class="brand-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.5"
+                        stroke-linejoin="round" />
+                    <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                    <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <span class="brand-name">CodeMentor<span class="brand-accent">AI</span></span>
+            <span class="brand-version">v2.0</span>
+        </div>
+        <div class="topbar-center">
+            <div class="status-pill" id="systemStatus">
+                <span class="status-dot"></span>
+                <span class="status-text">System Ready</span>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <span class="config-badge" id="configBadge">⚡ LM Studio</span>
+            <button class="settings-btn" onclick="openSettings()" title="Configure AI Backend">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                Settings
+            </button>
+            <div class="user-input-wrap">
+                <svg class="user-icon" width="13" height="13" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5" />
+                    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.5"
+                        stroke-linecap="round" />
+                </svg>
+                <input type="text" id="userId" placeholder="Enter user ID" autocomplete="off">
+            </div>
+        </div>
+    </header>
+
+    <main class="workspace">
+
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar">
+
+            <div class="sidebar-section">
+                <p class="section-label">Debug Intelligence</p>
+                <div class="metric-ring-card">
+                    <div class="ring-wrap">
+                        <svg class="ring-svg" viewBox="0 0 80 80">
+                            <circle class="ring-track" cx="40" cy="40" r="32" />
+                            <circle class="ring-fill" id="scoreRing" cx="40" cy="40" r="32" stroke-dasharray="201"
+                                stroke-dashoffset="201" />
+                        </svg>
+                        <div class="ring-label">
+                            <span class="ring-value" id="score">—</span>
+                            <span class="ring-unit">pts</span>
+                        </div>
+                    </div>
+                    <div class="ring-meta">
+                        <p class="ring-title">Debug Score</p>
+                        <p class="ring-sub">Cumulative performance</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FIXED: Progress section now uses vertical stacked cards -->
+            <div class="sidebar-section">
+                <p class="section-label">Progress</p>
+                <div class="stat-stack">
+                    <div class="stat-item">
+                        <span class="stat-icon level-icon">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                                    stroke="currentColor" stroke-width="1.8" />
+                            </svg>
+                        </span>
+                        <div class="stat-info">
+                            <span class="stat-label">Level</span>
+                            <span class="stat-value" id="level">—</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon attempt-icon">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                                <polyline points="23 4 23 10 17 10" stroke="currentColor" stroke-width="1.8"
+                                    stroke-linecap="round" />
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" stroke="currentColor" stroke-width="1.8"
+                                    stroke-linecap="round" />
+                            </svg>
+                        </span>
+                        <div class="stat-info">
+                            <span class="stat-label">Attempts</span>
+                            <span class="stat-value" id="attempts">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <p class="section-label">Cognitive State</p>
+                <div class="cognitive-card" id="cognitiveCard">
+                    <div class="cognitive-pulse" id="cognitivePulse"></div>
+                    <div class="cognitive-content">
+                        <span class="cognitive-icon" id="cognitiveIcon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"
+                                    stroke="currentColor" stroke-width="1.5" />
+                                <path d="M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            </svg>
+                        </span>
+                        <div>
+                            <p class="cognitive-state-label">Detected State</p>
+                            <p class="cognitive-state-value" id="state">Awaiting input</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <button class="analyze-btn" id="analyzeBtn" onclick="analyzeCode()">
+                    <span class="btn-scan"></span>
+                    <span class="btn-content" id="btnContent">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                        </svg>
+                        <span>Analyze Code</span>
+                    </span>
+                    <span class="btn-loading" id="btnLoading">
+                        <span class="spinner"></span>
+                        <span>Analyzing...</span>
+                    </span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- EDITOR -->
+        <section class="editor-area">
+
+            <!-- Tab Bar -->
+            <div class="tab-bar" id="tabBar">
+                <!-- Tabs injected by JS -->
+                <button class="tab-add-btn" id="tabAddBtn" onclick="addTab()" title="New tab">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="editor-toolbar">
+                <div class="toolbar-left">
+                    <div class="lang-selector">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                            <polyline points="16 18 22 12 16 6" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                            <polyline points="8 6 2 12 8 18" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                        </svg>
+                        <select id="langSelect" onchange="switchLanguage(this.value)">
+                            <option value="python">Python</option>
+                            <option value="cpp">C++</option>
+                            <option value="java">Java</option>
+                            <option value="javascript">JavaScript</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <!-- Editor theme toggle -->
+                    <button class="toolbar-btn theme-toggle-btn" id="themeToggleBtn" onclick="toggleEditorTheme()"
+                        title="Toggle editor light/dark">
+                        <svg id="themeIconDark" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" stroke="currentColor"
+                                stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                        <svg id="themeIconLight" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            style="display:none">
+                            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="1.5" />
+                            <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                            <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                            <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                            <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                        </svg>
+                        <span id="themeLabel">Light</span>
+                    </button>
+
+                    <button class="toolbar-btn" onclick="clearEditor()" title="Clear">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="currentColor"
+                                stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" onclick="copyCode()" title="Copy" id="copyBtn">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor"
+                                stroke-width="1.5" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="editor"></div>
+
+            <div class="editor-statusbar">
+                <span id="lineColInfo">Ln 1, Col 1</span>
+                <span class="sb-div"></span>
+                <span id="langIndicator">Python</span>
+                <span class="sb-div"></span>
+                <span id="editorThemeLabel">Dark</span>
+                <span class="sb-div"></span>
+                <span>UTF-8</span>
+                <span class="sb-div"></span>
+                <span id="charCount">0 chars</span>
+            </div>
+        </section>
+
+        <!-- RIGHT AI PANEL -->
+        <aside class="ai-panel">
+
+            <div class="panel-card">
+                <div class="panel-card-header">
+                    <div class="panel-card-title">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor"
+                                stroke-width="1.5" stroke-linejoin="round" />
+                        </svg>
+                        <span>AI Detection</span>
+                    </div>
+                    <span class="panel-badge neutral" id="aiBadge">IDLE</span>
+                </div>
+                <div class="detection-body">
+                    <div class="detection-bar-wrap">
+                        <div class="detection-bar">
+                            <div class="detection-fill" id="detectionFill" style="width:0%"></div>
+                        </div>
+                    </div>
+                    <p class="detection-label" id="ai">Awaiting analysis...</p>
+                </div>
+            </div>
+
+            <div class="panel-card" id="errorCard" style="display:none">
+                <div class="panel-card-header">
+                    <div class="panel-card-title error-title">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" />
+                            <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" />
+                        </svg>
+                        <span>Error Detected</span>
+                    </div>
+                </div>
+                <div class="error-body"><code id="errorOutput"></code></div>
+            </div>
+
+            <div class="panel-card hint-card">
+                <div class="panel-card-header">
+                    <div class="panel-card-title">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" />
+                            <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" />
+                        </svg>
+                        <span>Adaptive Hint</span>
+                    </div>
+                    <div class="hint-level-badge" id="hintLevelBadge"></div>
+                </div>
+                <div class="hint-body" id="hint">
+                    <div class="hint-placeholder">
+                        <div class="hint-placeholder-icon">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1"
+                                    stroke-dasharray="4 2" />
+                                <path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="1.5"
+                                    stroke-linecap="round" />
+                            </svg>
+                        </div>
+                        <p>Submit your code to receive<br>AI-powered adaptive guidance</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <div class="panel-card-header">
+                    <div class="panel-card-title">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span>Session History</span>
+                    </div>
+                </div>
+                <div class="history-body" id="historyBody">
+                    <p class="empty-history">No analyses yet this session</p>
+                </div>
+            </div>
+
+        </aside>
+    </main>
+
+
+    <!-- ══ SETTINGS MODAL ══ -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-dialog">
+            <div class="settings-header">
+                <div class="settings-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    AI Backend Settings
+                </div>
+                <button class="settings-close" onclick="closeSettings()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Mode Toggle -->
+            <div class="settings-section">
+                <label class="settings-label">AI Mode</label>
+                <div class="mode-toggle">
+                    <label class="mode-option">
+                        <input type="radio" name="cfg_mode" id="cfg_mode" value="lmstudio"
+                            onchange="toggleSettingsMode('lmstudio')">
+                        <div class="mode-card">
+                            <span class="mode-icon">⚡</span>
+                            <span class="mode-name">LM Studio</span>
+                            <span class="mode-desc">Local model, no cost</span>
+                        </div>
+                    </label>
+                    <label class="mode-option">
+                        <input type="radio" name="cfg_mode" value="apikey"
+                            onchange="toggleSettingsMode('apikey')">
+                        <div class="mode-card">
+                            <span class="mode-icon">🔑</span>
+                            <span class="mode-name">API Key</span>
+                            <span class="mode-desc">OpenAI, Groq, OpenRouter…</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- LM Studio Section -->
+            <div id="lmstudio_section">
+                <div class="settings-section">
+                    <label class="settings-label" for="cfg_lmstudio_url">LM Studio URL</label>
+                    <input class="settings-input" type="text" id="cfg_lmstudio_url"
+                        placeholder="http://localhost:1234">
+                    <p class="settings-hint">
+                        ⚠ Enable CORS in LM Studio → <strong>Settings → Server → Enable CORS</strong>
+                    </p>
+                </div>
+                <div class="settings-section">
+                    <label class="settings-label" for="cfg_lmstudio_model">Model Name</label>
+                    <input class="settings-input" type="text" id="cfg_lmstudio_model"
+                        placeholder="meta-llama-3.1-8b-instruct">
+                    <p class="settings-hint">Copy the exact model identifier from LM Studio</p>
+                </div>
+            </div>
+
+            <!-- API Key Section -->
+            <div id="apikey_section" style="display:none">
+                <div class="settings-section">
+                    <label class="settings-label">Provider Presets</label>
+                    <div class="provider-chips">
+                        <button class="chip" onclick="setProviderPreset('openai')">OpenAI</button>
+                        <button class="chip" onclick="setProviderPreset('openrouter')">OpenRouter</button>
+                        <button class="chip" onclick="setProviderPreset('groq')">Groq</button>
+                        <button class="chip" onclick="setProviderPreset('together')">Together AI</button>
+                        <button class="chip" onclick="setProviderPreset('custom')">Custom</button>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <label class="settings-label" for="cfg_api_url">API Base URL</label>
+                    <input class="settings-input" type="text" id="cfg_api_url"
+                        placeholder="https://api.openai.com">
+                </div>
+                <div class="settings-section">
+                    <label class="settings-label" for="cfg_api_key">API Key</label>
+                    <input class="settings-input" type="password" id="cfg_api_key"
+                        placeholder="sk-…">
+                    <p class="settings-hint">Stored locally in your browser. Never sent to our servers.</p>
+                </div>
+                <div class="settings-section">
+                    <label class="settings-label" for="cfg_api_model">Model</label>
+                    <input class="settings-input" type="text" id="cfg_api_model"
+                        placeholder="gpt-4o-mini">
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="settings-footer">
+                <button class="settings-test" id="testConnBtn" onclick="testConnection()">
+                    Test Connection
+                </button>
+                <div class="settings-footer-right">
+                    <button class="settings-cancel" onclick="closeSettings()">Cancel</button>
+                    <button class="settings-save" onclick="saveSettings()">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>

@@ -147,10 +147,12 @@ body {
     display: flex;
     align-items: center;
     gap: 7px;
-    padding: 5px 14px;
+    height: 32px;
+    padding: 0 14px;
+    box-sizing: border-box;
     background: rgba(16, 217, 138, 0.08);
     border: 1px solid rgba(16, 217, 138, 0.2);
-    border-radius: 20px;
+    border-radius: 8px;
     font-size: 11px;
     font-family: 'JetBrains Mono', monospace;
     color: var(--accent-green);
@@ -210,9 +212,11 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    height: 32px;
+    box-sizing: border-box;
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
+    border-radius: 8px;
     padding: 0 12px;
     transition: border-color 0.2s;
 }
@@ -228,14 +232,14 @@ body {
 }
 
 .user-input-wrap input {
-    height: 32px;
+    height: 100%;
     background: transparent;
     border: none;
     outline: none;
     color: var(--text-primary);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    width: 150px;
+    font-size: 11px;
+    width: 140px;
 }
 
 .user-input-wrap input::placeholder {
@@ -260,8 +264,7 @@ body {
     border-right: 1px solid var(--border-subtle);
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;          /* fixed layout — Analyze button always visible, no scroll */
     flex-shrink: 0;
 }
 
@@ -279,8 +282,9 @@ body {
 }
 
 .sidebar-section {
-    padding: 16px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
 }
 
 .section-label {
@@ -289,7 +293,7 @@ body {
     letter-spacing: 1.8px;
     text-transform: uppercase;
     color: var(--text-muted);
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     font-family: 'Space Mono', monospace;
 }
 
@@ -549,9 +553,261 @@ body {
     color: var(--accent-red);
 }
 
+/* Behavioral readout (the signals the cognitive state is inferred from) */
+.cognitive-subtitle {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    font-family: 'Space Mono', monospace;
+    margin-top: 8px;
+    text-align: center;
+}
+
+.behavior-readout {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.behavior-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 10px 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+}
+
+.behavior-metric-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'Space Mono', monospace;
+}
+
+.behavior-metric-label {
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    font-family: 'Space Mono', monospace;
+    text-align: center;
+}
+
+/* ── Companion stack (pixel-pet companion / Wellbeing), OxygenOS-style tiles ── */
+.companion-section {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 92px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.companion-stack {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 92px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.stack-widget {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 5px;
+    padding: 10px 12px 24px;   /* extra bottom room for the pager */
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    pointer-events: none;
+    transition: opacity 0.35s, transform 0.35s, border-color 0.35s;
+}
+
+.stack-widget.active {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+}
+
+/* Pager now lives INSIDE the tile, bottom-centre */
+.stack-pager {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 3;
+}
+
+.stack-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.25s, transform 0.25s;
+}
+
+.stack-dot.active {
+    background: var(--accent-cyan);
+    transform: scale(1.3);
+}
+
+/* ── Pixel-pet companion ── */
+.pet-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+}
+
+.pet {
+    width: 52px;
+    height: 52px;
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: petBob 2.6s ease-in-out infinite;
+}
+
+@keyframes petBob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-1.2px); }
+}
+
+.pet-tail {
+    transform-box: fill-box;
+    transform-origin: 90% 100%;
+    animation: petWag 1.8s ease-in-out infinite;
+}
+
+@keyframes petWag {
+    0%, 100% { transform: rotate(-8deg); }
+    50%      { transform: rotate(12deg); }
+}
+
+.pet-ears {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    transition: transform 0.4s;
+}
+
+.pet-eyes {
+    transform-box: fill-box;
+    transform-origin: 50% 40%;
+    animation: petBlink 5s infinite;
+}
+
+@keyframes petBlink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    96%           { transform: scaleY(0.12); }
+}
+
+.pet-emote {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+/* Expression variants — neutral by default, swapped by mood class */
+.pet-eyes-happy,
+.pet-eyes-sad,
+.pet-emote { display: none; }
+
+#moodWidget.mood-good .pet-eyes-neutral { display: none; }
+#moodWidget.mood-good .pet-eyes-happy   { display: inline; }
+#moodWidget.mood-good .pet-emote-happy  { display: inline; animation: emotePulse 1s ease-in-out infinite; }
+#moodWidget.mood-good .pet-tail         { animation-duration: 0.7s; }
+
+#moodWidget.mood-warn .pet-eyes-neutral { display: none; }
+#moodWidget.mood-warn .pet-eyes-sad     { display: inline; }
+#moodWidget.mood-warn .pet-emote-sad    { display: inline; }
+#moodWidget.mood-warn .pet-tail         { animation-duration: 3.2s; }
+#moodWidget.mood-warn .pet              { animation-duration: 4s; }
+#moodWidget.mood-warn .pet-ears         { transform: translateY(2px) scaleY(0.65); }
+
+@keyframes emotePulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.3); }
+}
+
+.mood-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary);
+    transition: color 0.4s;
+}
+
+.mood-message {
+    font-size: 9px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    font-family: 'Space Mono', monospace;
+}
+
+#moodWidget.mood-good .mood-title { color: var(--accent-green); }
+#moodWidget.mood-warn .mood-title { color: var(--accent-amber); }
+
+/* Wellbeing */
+.wellbeing-icon {
+    color: var(--accent-green);
+    transition: color 0.35s;
+}
+
+.wellbeing-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary);
+    transition: color 0.35s;
+}
+
+.wellbeing-message {
+    font-size: 9px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    font-family: 'Space Mono', monospace;
+}
+
+.wellbeing-btn {
+    margin-top: 4px;
+    padding: 5px 12px;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: var(--accent-cyan);
+    background: transparent;
+    border: 1px solid var(--border-active);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.25s, color 0.25s;
+}
+
+.wellbeing-btn:hover {
+    background: var(--border-subtle);
+}
+
+#wellbeingWidget.nudge {
+    border-color: var(--accent-amber);
+    box-shadow: inset 0 0 0 1px var(--accent-amber);
+}
+
+#wellbeingWidget.nudge .wellbeing-icon,
+#wellbeingWidget.nudge .wellbeing-title {
+    color: var(--accent-amber);
+}
+
 /* Analyze Button */
 .sidebar-footer {
-    padding: 16px;
+    padding: 10px 16px;
     margin-top: auto;
 }
 
@@ -656,17 +912,40 @@ body {
 }
 
 /* ── Tab Bar ── */
-.tab-bar {
-    height: var(--tabbar-h);
-    background: rgba(5, 10, 20, 0.98);
+/* Single-row editor header: tabs + language on the left, actions on the right */
+.editor-header {
+    height: 40px;
+    background: rgba(8, 15, 30, 0.95);
     border-bottom: 1px solid var(--border-subtle);
     display: flex;
-    align-items: flex-end;
-    padding: 0 8px 0;
-    gap: 2px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.editor-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;              /* allow the tab strip to scroll rather than overflow */
+}
+
+.editor-header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.tab-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     overflow-x: auto;
     overflow-y: hidden;
-    flex-shrink: 0;
+    min-width: 0;
 }
 
 .tab-bar::-webkit-scrollbar {
@@ -682,32 +961,29 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px;
-    border-radius: 6px 6px 0 0;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: var(--radius-sm);
     font-family: 'JetBrains Mono', monospace;
     font-size: 11.5px;
     color: var(--text-secondary);
-    background: transparent;
-    border: 1px solid transparent;
-    border-bottom: none;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
     flex-shrink: 0;
-    position: relative;
-    bottom: -1px;
     user-select: none;
 }
 
 .file-tab:hover {
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-card-hover);
 }
 
 .file-tab.active {
     background: var(--bg-deep);
-    border-color: var(--border-subtle);
-    border-bottom-color: var(--bg-deep);
+    border-color: var(--border-active);
     color: var(--text-primary);
 }
 
@@ -759,17 +1035,15 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 6px;
-    background: transparent;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
     border: 1px solid var(--border-subtle);
     color: var(--text-muted);
     cursor: pointer;
     transition: all 0.2s;
-    margin-bottom: 4px;
     flex-shrink: 0;
-    margin-left: 4px;
 }
 
 .tab-add-btn:hover {
@@ -798,32 +1072,111 @@ body {
     gap: 6px;
 }
 
-.lang-selector {
+/* ── Custom language dropdown (themed, replaces native select) ── */
+.lang-dropdown {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.lang-trigger {
     display: flex;
     align-items: center;
     gap: 7px;
+    height: 28px;
+    padding: 0 10px;
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
-    padding: 0 10px;
-    height: 28px;
-    color: var(--text-secondary);
-}
-
-.lang-selector select {
-    background: transparent;
-    border: none;
-    outline: none;
     color: var(--text-secondary);
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     cursor: pointer;
-    -webkit-appearance: none;
+    transition: all 0.2s;
 }
 
-.lang-selector select option {
-    background: var(--bg-card);
+.lang-trigger:hover {
+    border-color: var(--border-active);
     color: var(--text-primary);
+}
+
+.lang-code-icon {
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.lang-chevron {
+    color: var(--text-muted);
+    margin-left: 2px;
+    transition: transform 0.2s;
+}
+
+.lang-dropdown.open .lang-chevron {
+    transform: rotate(180deg);
+}
+
+.lang-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.lang-dot.python     { background: #3b82f6; }
+.lang-dot.cpp        { background: #f59e0b; }
+.lang-dot.java       { background: #ef4444; }
+.lang-dot.javascript { background: #facc15; }
+
+.lang-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 168px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-active);
+    border-radius: var(--radius);
+    padding: 5px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 200;
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.18s, transform 0.18s;
+}
+
+.lang-dropdown.open .lang-menu {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.lang-option {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 7px 10px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.lang-option:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.lang-option.active {
+    background: rgba(0, 200, 255, 0.1);
+    color: var(--accent-cyan);
 }
 
 .toolbar-btn {
@@ -1058,9 +1411,18 @@ body {
     border-color: rgba(168, 85, 247, 0.25);
 }
 
+/* Let the hint grow into the empty space under Session History and scroll if long. */
+.hint-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 180px;
+}
+
 .hint-body {
     padding: 14px;
-    max-height: 260px;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     font-size: 12px;
     line-height: 1.7;
@@ -1254,11 +1616,15 @@ body {
 
 /* Config badge in topbar */
 .config-badge {
+    display: inline-flex;
+    align-items: center;
+    height: 32px;
+    padding: 0 12px;
+    box-sizing: border-box;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 4px;
+    border-radius: 8px;
     letter-spacing: 0.04em;
     transition: all 0.2s;
     white-space: nowrap;
@@ -1278,28 +1644,38 @@ body {
 .settings-btn {
     display: flex;
     align-items: center;
-    gap: 5px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: var(--text-muted, #9ca3af);
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    box-sizing: border-box;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
     font-size: 11px;
-    font-family: 'Syne', sans-serif;
+    font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
-    padding: 5px 10px;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.18s;
     letter-spacing: 0.03em;
 }
 .settings-btn:hover {
-    background: rgba(255,255,255,0.09);
-    color: #e5e7eb;
-    border-color: rgba(255,255,255,0.18);
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    border-color: var(--border-active);
+}
+
+/* Icon-only variant — square gear button */
+.settings-btn--icon {
+    width: 32px;
+    padding: 0;
+    gap: 0;
+    justify-content: center;
 }
 .topbar-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 /* ── Modal Backdrop ── */

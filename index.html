@@ -30,23 +30,14 @@
                 </svg>
             </div>
             <span class="brand-name">CodeMentor<span class="brand-accent">AI</span></span>
-            <span class="brand-version">v2.0</span>
+            <span class="brand-version">v3.0</span>
         </div>
-        <div class="topbar-center">
+        <div class="topbar-right">
             <div class="status-pill" id="systemStatus">
                 <span class="status-dot"></span>
                 <span class="status-text">System Ready</span>
             </div>
-        </div>
-        <div class="topbar-right">
             <span class="config-badge" id="configBadge">⚡ LM Studio</span>
-            <button class="settings-btn" onclick="openSettings()" title="Configure AI Backend">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.5"/>
-                </svg>
-                Settings
-            </button>
             <div class="user-input-wrap">
                 <svg class="user-icon" width="13" height="13" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.5" />
@@ -55,6 +46,12 @@
                 </svg>
                 <input type="text" id="userId" placeholder="Enter user ID" autocomplete="off">
             </div>
+            <button class="settings-btn settings-btn--icon" onclick="openSettings()" title="Settings" aria-label="Settings">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+            </button>
         </div>
     </header>
 
@@ -137,6 +134,93 @@
                         </div>
                     </div>
                 </div>
+                <p class="cognitive-subtitle">Inferred from typing behavior</p>
+                <div class="behavior-readout" id="behaviorReadout">
+                    <div class="behavior-metric">
+                        <span class="behavior-metric-value" id="metricTypingSpeed">—</span>
+                        <span class="behavior-metric-label">Typing / min</span>
+                    </div>
+                    <div class="behavior-metric">
+                        <span class="behavior-metric-value" id="metricIdle">—</span>
+                        <span class="behavior-metric-label">Idle</span>
+                    </div>
+                    <div class="behavior-metric">
+                        <span class="behavior-metric-value" id="metricDeletions">—</span>
+                        <span class="behavior-metric-label">Deletions</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section companion-section">
+                <div class="companion-stack" id="companionStack" title="Click or scroll to switch">
+                    <div class="stack-widget active mood-neutral" id="moodWidget">
+                        <div class="pet-stage">
+                            <svg class="pet" viewBox="0 0 24 24" shape-rendering="crispEdges" aria-hidden="true">
+                                <g class="pet-body">
+                                    <g class="pet-ears">
+                                        <rect x="4"  y="0" width="4" height="4" fill="#9c6b3f"/>
+                                        <rect x="16" y="0" width="4" height="4" fill="#9c6b3f"/>
+                                        <rect x="5"  y="1" width="2" height="2" fill="#e2a0a0"/>
+                                        <rect x="17" y="1" width="2" height="2" fill="#e2a0a0"/>
+                                    </g>
+                                    <rect x="4"  y="4"  width="16" height="2"  fill="#d29a6a"/>
+                                    <rect x="2"  y="6"  width="20" height="4"  fill="#d29a6a"/>
+                                    <rect x="2"  y="10" width="8"  height="2"  fill="#d29a6a"/>
+                                    <rect x="10" y="10" width="4"  height="2"  fill="#e07a7a"/>
+                                    <rect x="14" y="10" width="8"  height="2"  fill="#d29a6a"/>
+                                    <rect x="4"  y="12" width="16" height="4"  fill="#d29a6a"/>
+                                    <rect x="4"  y="16" width="2"  height="4"  fill="#d29a6a"/>
+                                    <rect x="6"  y="16" width="12" height="4"  fill="#efd3a8"/>
+                                    <rect x="18" y="16" width="2"  height="4"  fill="#d29a6a"/>
+                                    <rect x="4"  y="20" width="16" height="2"  fill="#d29a6a"/>
+                                    <rect x="4"  y="22" width="4"  height="2"  fill="#9c6b3f"/>
+                                    <rect x="16" y="22" width="4"  height="2"  fill="#9c6b3f"/>
+                                </g>
+                                <g class="pet-tail">
+                                    <rect x="20" y="12" width="4" height="2" fill="#9c6b3f"/>
+                                    <rect x="22" y="12" width="2" height="8" fill="#9c6b3f"/>
+                                </g>
+                                <g class="pet-eyes pet-eyes-neutral">
+                                    <rect x="7"  y="7" width="2" height="3" fill="#2e2013"/>
+                                    <rect x="15" y="7" width="2" height="3" fill="#2e2013"/>
+                                </g>
+                                <g class="pet-eyes pet-eyes-happy">
+                                    <path d="M6 9 L8 7 L10 9" stroke="#2e2013" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M14 9 L16 7 L18 9" stroke="#2e2013" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                                </g>
+                                <g class="pet-eyes pet-eyes-sad">
+                                    <rect x="7"  y="8" width="2" height="2" fill="#2e2013"/>
+                                    <rect x="15" y="8" width="2" height="2" fill="#2e2013"/>
+                                    <path d="M6 6 L9 7"  stroke="#2e2013" stroke-width="1.2" stroke-linecap="round"/>
+                                    <path d="M18 6 L15 7" stroke="#2e2013" stroke-width="1.2" stroke-linecap="round"/>
+                                </g>
+                                <g class="pet-emote pet-emote-happy">
+                                    <path d="M19 2c.6-.8 2-.4 2 .6 0 1-1.6 2-2 2.2-.4-.2-2-1.2-2-2.2 0-1 1.4-1.4 2-.6z" fill="#f43f5e"/>
+                                </g>
+                                <g class="pet-emote pet-emote-sad">
+                                    <path d="M5 6 q1.2 2 0 3.2 Q3.8 8 5 6z" fill="#4aa3ff"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <p class="mood-title" id="moodTitle">Ready when you are</p>
+                        <p class="mood-message" id="moodMessage">Write some code and hit Analyze — I'll read the room.</p>
+                    </div>
+                    <div class="stack-widget" id="wellbeingWidget">
+                        <div class="wellbeing-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 3c3 3 6 5 6 9a6 6 0 0 1-12 0c0-4 3-6 6-9z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                                <path d="M12 21v-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <p class="wellbeing-title" id="wellbeingTitle">You're doing fine</p>
+                        <p class="wellbeing-message" id="wellbeingMessage">If a bug won't budge, a short break often unblocks it.</p>
+                        <button class="wellbeing-btn" id="wellbeingBtn">Take 2 min</button>
+                    </div>
+                    <div class="stack-pager" id="stackPager">
+                        <span class="stack-dot active" data-widget="0" title="Companion"></span>
+                        <span class="stack-dot" data-widget="1" title="Wellbeing"></span>
+                    </div>
+                </div>
             </div>
 
             <div class="sidebar-footer">
@@ -161,38 +245,53 @@
         <!-- EDITOR -->
         <section class="editor-area">
 
-            <!-- Tab Bar -->
-            <div class="tab-bar" id="tabBar">
-                <!-- Tabs injected by JS -->
-                <button class="tab-add-btn" id="tabAddBtn" onclick="addTab()" title="New tab">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" />
-                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" />
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Toolbar -->
-            <div class="editor-toolbar">
-                <div class="toolbar-left">
-                    <div class="lang-selector">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                            <polyline points="16 18 22 12 16 6" stroke="currentColor" stroke-width="1.5"
-                                stroke-linecap="round" />
-                            <polyline points="8 6 2 12 8 18" stroke="currentColor" stroke-width="1.5"
-                                stroke-linecap="round" />
-                        </svg>
-                        <select id="langSelect" onchange="switchLanguage(this.value)">
-                            <option value="python">Python</option>
-                            <option value="cpp">C++</option>
-                            <option value="java">Java</option>
-                            <option value="javascript">JavaScript</option>
-                        </select>
+            <!-- Editor header: tabs + language + actions, all in one row -->
+            <div class="editor-header">
+                <div class="editor-header-left">
+                    <div class="tab-bar" id="tabBar">
+                        <!-- Tabs injected by JS -->
+                        <button class="tab-add-btn" id="tabAddBtn" onclick="addTab()" title="New tab">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" />
+                                <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="lang-dropdown" id="langDropdown" data-value="python">
+                        <button class="lang-trigger" id="langTrigger" onclick="toggleLangMenu(event)"
+                            aria-haspopup="listbox" aria-expanded="false" title="Language">
+                            <svg class="lang-code-icon" width="11" height="11" viewBox="0 0 24 24" fill="none">
+                                <polyline points="16 18 22 12 16 6" stroke="currentColor" stroke-width="1.5"
+                                    stroke-linecap="round" />
+                                <polyline points="8 6 2 12 8 18" stroke="currentColor" stroke-width="1.5"
+                                    stroke-linecap="round" />
+                            </svg>
+                            <span class="lang-dot python" id="langTriggerDot"></span>
+                            <span id="langTriggerLabel">Python</span>
+                            <svg class="lang-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none">
+                                <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </button>
+                        <div class="lang-menu" id="langMenu" role="listbox">
+                            <button class="lang-option" role="option" data-lang="python" onclick="selectLang('python')">
+                                <span class="lang-dot python"></span>Python
+                            </button>
+                            <button class="lang-option" role="option" data-lang="cpp" onclick="selectLang('cpp')">
+                                <span class="lang-dot cpp"></span>C++
+                            </button>
+                            <button class="lang-option" role="option" data-lang="java" onclick="selectLang('java')">
+                                <span class="lang-dot java"></span>Java
+                            </button>
+                            <button class="lang-option" role="option" data-lang="javascript" onclick="selectLang('javascript')">
+                                <span class="lang-dot javascript"></span>JavaScript
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="toolbar-right">
+                <div class="editor-header-right">
                     <!-- Editor theme toggle -->
                     <button class="toolbar-btn theme-toggle-btn" id="themeToggleBtn" onclick="toggleEditorTheme()"
                         title="Toggle editor light/dark">

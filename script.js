@@ -10,6 +10,17 @@ let editorIsDark = true;
 let analysisHistory = [];
 const debugSessions = {};
 
+/* ── Behavioral signals (fed to the cognitive model) ── */
+let lastEditTime      = Date.now();   // updated on every editor change; used for idle_time
+let typedChars        = 0;            // chars inserted since last Analyze (typing_speed)
+let deletionCount     = 0;            // deletion events since last Analyze
+let signalWindowStart = Date.now();   // start of the current accumulation window
+
+/* ── Session persistence keys (localStorage) ── */
+const HISTORY_KEY     = 'cm_history';
+const LAST_RESULT_KEY = 'cm_last_result';
+const LAST_USER_KEY   = 'cm_last_user';
+
 /* ── Tab System ── */
 let tabs = [];
 let activeTabId = null;
@@ -201,13 +212,19 @@ function detectAICode(code, lang = 'python') {
    ══════════════════════════════════════════ */
 
 function predictCognitiveState(typing_speed, deletions, run_count, idle_time) {
-    // Expert: fast typing, almost no deletions
-    if (typing_speed >= 35 && deletions <= 2) return 'expert';
-    // Confident: reasonably fast, low deletions
-    if (typing_speed >= 25 && deletions <= 3) return 'confident';
-    // Confused: very slow or long idle time
-    if (typing_speed <= 7 || idle_time >= 25) return 'confused';
-    // Default: struggling
+    // typing_speed is chars/min = typedChars / minutesElapsed, where the window
+    // runs from the previous Analyze. Calibrated from REAL editor use (which
+    // includes reading the AI hint / thinking between rounds), not automated
+    // typing: engaged typing lands ~40-45, diluted/hesitant ~5-12, and
+    // corrections (deletions) run 0-1 when clean up to 40 when floundering.
+    // idle_time is checked FIRST so a long pause always wins over fast typing.
+    // Confused: a long pause (fast burst then stall), or barely making progress.
+    if (idle_time >= 25 || typing_speed <= 8) return 'confused';
+    // Expert: fast, clean typing with almost no corrections.
+    if (typing_speed >= 40 && deletions <= 4) return 'expert';
+    // Confident: a decent pace with only moderate correcting.
+    if (typing_speed >= 20 && deletions <= 12) return 'confident';
+    // Default: slow, or actively typing but with heavy corrections.
     return 'struggling';
 }
 
@@ -336,9 +353,15 @@ require(['vs/editor/editor.main'], function () {
             `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
     });
 
-    editor.onDidChangeModelContent(() => {
+    editor.onDidChangeModelContent((e) => {
         const val = editor.getValue();
         document.getElementById('charCount').textContent = `${val.length} chars`;
+        lastEditTime = Date.now();   // idle_time is measured from the last edit
+        // Accumulate typing/deletion signals from each change in this event.
+        for (const c of e.changes) {
+            if (c.text.length > 0 && c.rangeLength === 0)      typedChars += c.text.length;  // insertion
+            else if (c.text.length === 0 && c.rangeLength > 0) deletionCount += 1;            // deletion
+        }
         if (activeTabId !== null) {
             const tab = tabs.find(t => t.id === activeTabId);
             if (tab) tab.content = val;
@@ -349,6 +372,9 @@ require(['vs/editor/editor.main'], function () {
 
     // Apply config-based status on load
     updateConfigBadge();
+
+    // Restore persisted session state (history + last stats) across refresh
+    restoreSession();
 });
 
 /* ══════════════════════════════════════════
@@ -511,14 +537,23 @@ async function analyzeCode() {
         const analysis = analyzeCodeStatic(code, lang);
         const hasError = analysis.status === 'error';
 
-        // ── 2. Cognitive model (default behavioral inputs) ──
-        const state = predictCognitiveState(10, 5, 3, 5);
-
-        // ── 3. Debug session tracking ──
+        // ── 2. Debug session tracking (must precede cognitive state) ──
+        // run_count comes from this session's own attempt counter, not a literal.
+        // Mirrors the reorder in main.py: get/create the session and record the
+        // attempt BEFORE computing cognitive state, so session.attempts is real.
         if (!debugSessions[userId]) debugSessions[userId] = new DebugSession();
         const session = debugSessions[userId];
         session.recordAttempt(hasError);
         const score = session.calculateScore();
+
+        // ── 3. Cognitive model (real behavioral inputs) ──
+        const idleTime     = (Date.now() - lastEditTime) / 1000;                 // seconds since last edit
+        const minutes      = Math.max(Date.now() - signalWindowStart, 1) / 60000; // window length, guarded
+        const typingSpeed  = typedChars / minutes;                               // chars typed per minute
+        const deletions    = deletionCount;
+        const state = predictCognitiveState(typingSpeed, deletions, session.attempts, idleTime);
+        // Reset the accumulation window for the next Analyze.
+        typedChars = 0; deletionCount = 0; signalWindowStart = Date.now();
 
         // ── 4. AI code detection (ported from style_detector.py) ──
         const aiFlag = detectAICode(code, lang);
@@ -543,6 +578,7 @@ async function analyzeCode() {
 
         renderResults(data);
         addHistory(data);
+        saveLastResult(data, userId);
         showToast('Analysis complete ✓', 'success');
 
     } catch (err) {
@@ -645,7 +681,46 @@ function addHistory(data) {
     const err = data.error && data.error !== 'None';
     analysisHistory.unshift({ ts, err, score: data.debug_score });
     if (analysisHistory.length > 8) analysisHistory.pop();
+    saveHistory();
     renderHistory();
+}
+
+/* ── Session persistence (survives page refresh) ── */
+function saveHistory() {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(analysisHistory)); } catch {}
+}
+
+function loadHistory() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+        if (Array.isArray(stored)) analysisHistory = stored.slice(0, 8);
+    } catch { analysisHistory = []; }
+}
+
+function saveLastResult(data, userId) {
+    try {
+        localStorage.setItem(LAST_RESULT_KEY, JSON.stringify(data));
+        if (userId) localStorage.setItem(LAST_USER_KEY, userId);
+    } catch {}
+}
+
+function restoreSession() {
+    // History panel
+    loadHistory();
+    renderHistory();
+
+    // User ID input
+    try {
+        const lastUser = localStorage.getItem(LAST_USER_KEY);
+        const input = document.getElementById('userId');
+        if (lastUser && input && !input.value) input.value = lastUser;
+    } catch {}
+
+    // Last rendered stats (score / level / attempts / state / AI / hint)
+    try {
+        const last = JSON.parse(localStorage.getItem(LAST_RESULT_KEY) || 'null');
+        if (last) renderResults(last);
+    } catch {}
 }
 
 function renderHistory() {

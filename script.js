@@ -220,12 +220,135 @@ function predictCognitiveState(typing_speed, deletions, run_count, idle_time) {
     // idle_time is checked FIRST so a long pause always wins over fast typing.
     // Confused: a long pause (fast burst then stall), or barely making progress.
     if (idle_time >= 25 || typing_speed <= 8) return 'confused';
-    // Expert: fast, clean typing with almost no corrections.
-    if (typing_speed >= 40 && deletions <= 4) return 'expert';
-    // Confident: a decent pace with only moderate correcting.
+    // Expert: fast, clean typing — but only once shown across more than a first
+    // attempt. run_count guards against a quick, clean first try (even of broken
+    // code) instantly reading as mastery.
+    if (typing_speed >= 40 && deletions <= 4 && run_count >= 2) return 'expert';
+    // Confident: a decent pace with only moderate correcting (incl. a strong first try).
     if (typing_speed >= 20 && deletions <= 12) return 'confident';
     // Default: slow, or actively typing but with heavy corrections.
     return 'struggling';
+}
+
+/* Show the raw behavioral signals the cognitive state was inferred from. */
+function updateBehaviorReadout(typing_speed, idle_time, deletions) {
+    const speedEl = document.getElementById('metricTypingSpeed');
+    const idleEl  = document.getElementById('metricIdle');
+    const delEl   = document.getElementById('metricDeletions');
+    if (speedEl) speedEl.textContent = Math.round(typing_speed);
+    if (idleEl)  idleEl.textContent  = Math.round(idle_time) + 's';
+    if (delEl)   delEl.textContent   = deletions;
+}
+
+/* ══════════════════════════════════════════
+   COMPANION STACK — Mentor Mood + Wellbeing
+   Two switchable tiles sharing one space (OxygenOS-style):
+   Mentor Mood mirrors the detected cognitive state; the Wellbeing
+   nudge auto-surfaces after a run of confused/struggling states.
+   ══════════════════════════════════════════ */
+
+let companionIndex = 0;   // 0 = Mentor Mood, 1 = Wellbeing
+let struggleStreak = 0;   // consecutive confused/struggling analyses
+let breakTimer     = null;
+let lastWheel      = 0;
+
+const MOOD_CONFIG = {
+    expert:     { cls: 'mood-good',    title: 'In the zone',        msg: "Clean and fast — you're flying. Keep going." },
+    confident:  { cls: 'mood-good',    title: 'Feeling good',       msg: "Nice steady flow. You've got this." },
+    struggling: { cls: 'mood-warn',    title: 'Hang in there',      msg: 'Progress is progress. Try breaking it into smaller steps.' },
+    confused:   { cls: 'mood-warn',    title: 'Bit stuck?',         msg: 'Totally normal. Re-read the error and change one thing at a time.' },
+    _default:   { cls: 'mood-neutral', title: 'Ready when you are', msg: "Write some code and hit Analyze — I'll read the room." }
+};
+
+function setText(id, txt) { const el = document.getElementById(id); if (el) el.textContent = txt; }
+
+function switchCompanionWidget(i) {
+    companionIndex = ((i % 2) + 2) % 2;
+    document.querySelectorAll('.stack-widget').forEach((w, idx) =>
+        w.classList.toggle('active', idx === companionIndex));
+    document.querySelectorAll('.stack-dot').forEach((d, idx) =>
+        d.classList.toggle('active', idx === companionIndex));
+}
+
+function updateCompanion(state) {
+    // The pixel pet's expression mirrors the detected cognitive state (via mood class).
+    const cfg    = MOOD_CONFIG[state] || MOOD_CONFIG._default;
+    const widget = document.getElementById('moodWidget');
+    if (widget) widget.className = 'stack-widget ' + cfg.cls + (companionIndex === 0 ? ' active' : '');
+    setText('moodTitle', cfg.title);
+    setText('moodMessage', cfg.msg);
+
+    // Wellbeing: count rough states in a row; nudge after 3 straight.
+    if (state === 'confused' || state === 'struggling') struggleStreak++;
+    else struggleStreak = 0;
+
+    const well = document.getElementById('wellbeingWidget');
+    if (struggleStreak >= 3) {
+        if (well) well.classList.add('nudge');
+        setText('wellbeingTitle', 'Time for a breather');
+        setText('wellbeingMessage', "A few rough ones in a row. Step away for 2 minutes — it helps more than you'd think.");
+        switchCompanionWidget(1);   // auto-surface the nudge
+    } else {
+        if (well) well.classList.remove('nudge');
+        setText('wellbeingTitle', "You're doing fine");
+        setText('wellbeingMessage', "If a bug won't budge, a short break often unblocks it.");
+    }
+}
+
+function fmtTime(s) {
+    const m = Math.floor(s / 60), sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+
+function toggleBreak() {
+    const btn = document.getElementById('wellbeingBtn');
+    if (!btn) return;
+    if (breakTimer) {                       // running → cancel
+        clearInterval(breakTimer); breakTimer = null;
+        btn.textContent = 'Take 2 min';
+        return;
+    }
+    let remaining = 120;
+    btn.textContent = fmtTime(remaining);
+    breakTimer = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+            clearInterval(breakTimer); breakTimer = null;
+            btn.textContent = 'Back to it →';
+            struggleStreak = 0;
+            const well = document.getElementById('wellbeingWidget');
+            if (well) well.classList.remove('nudge');
+        } else {
+            btn.textContent = fmtTime(remaining);
+        }
+    }, 1000);
+}
+
+function initCompanion() {
+    document.querySelectorAll('.stack-dot').forEach(dot =>
+        dot.addEventListener('click', (e) => {
+            e.stopPropagation();
+            switchCompanionWidget(parseInt(dot.dataset.widget, 10));
+        }));
+
+    const stack = document.getElementById('companionStack');
+    if (!stack) return;
+    // Click the tile (not the break button) to flip — OxygenOS-style.
+    stack.addEventListener('click', (e) => {
+        if (e.target.closest('.wellbeing-btn')) return;
+        switchCompanionWidget(companionIndex + 1);
+    });
+    // Scroll over the tile to cycle (throttled so it doesn't flicker).
+    stack.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const now = Date.now();
+        if (now - lastWheel < 350) return;
+        lastWheel = now;
+        switchCompanionWidget(companionIndex + 1);
+    }, { passive: false });
+
+    const btn = document.getElementById('wellbeingBtn');
+    if (btn) btn.addEventListener('click', (e) => { e.stopPropagation(); toggleBreak(); });
 }
 
 /* ══════════════════════════════════════════
@@ -375,6 +498,9 @@ require(['vs/editor/editor.main'], function () {
 
     // Restore persisted session state (history + last stats) across refresh
     restoreSession();
+
+    // Set up the Mentor Mood / Wellbeing companion stack.
+    initCompanion();
 });
 
 /* ══════════════════════════════════════════
@@ -405,7 +531,7 @@ function switchToTab(id) {
     if (!tab) return;
     monaco.editor.setModelLanguage(editor.getModel(), MONACO_LANG[tab.lang]);
     editor.setValue(tab.content);
-    document.getElementById('langSelect').value     = tab.lang;
+    setLangDropdown(tab.lang);
     document.getElementById('langIndicator').textContent = LANG_LABELS[tab.lang];
     renderTabs();
 }
@@ -425,8 +551,7 @@ function closeTab(id, event) {
 }
 
 function addTab() {
-    const lang = document.getElementById('langSelect').value || 'python';
-    createTab(lang);
+    createTab(currentLang());
 }
 
 function renderTabs() {
@@ -463,6 +588,51 @@ function switchLanguage(lang) {
     document.getElementById('langIndicator').textContent = LANG_LABELS[lang];
     renderTabs();
 }
+
+/* ── Custom language dropdown ── */
+function toggleLangMenu(e) {
+    if (e) e.stopPropagation();
+    const dd = document.getElementById('langDropdown');
+    dd.classList.toggle('open');
+    document.getElementById('langTrigger')
+        .setAttribute('aria-expanded', dd.classList.contains('open') ? 'true' : 'false');
+}
+
+function closeLangMenu() {
+    const dd = document.getElementById('langDropdown');
+    if (!dd) return;
+    dd.classList.remove('open');
+    document.getElementById('langTrigger').setAttribute('aria-expanded', 'false');
+}
+
+function currentLang() {
+    const dd = document.getElementById('langDropdown');
+    return (dd && dd.dataset.value) || 'python';
+}
+
+function setLangDropdown(lang) {
+    const dd = document.getElementById('langDropdown');
+    if (!dd) return;
+    dd.dataset.value = lang;
+    const dot   = document.getElementById('langTriggerDot');
+    const label = document.getElementById('langTriggerLabel');
+    if (dot)   dot.className = 'lang-dot ' + lang;
+    if (label) label.textContent = LANG_LABELS[lang] || lang;
+    dd.querySelectorAll('.lang-option').forEach(o =>
+        o.classList.toggle('active', o.dataset.lang === lang));
+}
+
+function selectLang(lang) {
+    setLangDropdown(lang);
+    closeLangMenu();
+    switchLanguage(lang);
+}
+
+/* Close the language menu on any outside click. */
+document.addEventListener('click', (e) => {
+    const dd = document.getElementById('langDropdown');
+    if (dd && dd.classList.contains('open') && !dd.contains(e.target)) closeLangMenu();
+});
 
 /* ── Editor Theme Toggle ── */
 function toggleEditorTheme() {
@@ -552,6 +722,10 @@ async function analyzeCode() {
         const typingSpeed  = typedChars / minutes;                               // chars typed per minute
         const deletions    = deletionCount;
         const state = predictCognitiveState(typingSpeed, deletions, session.attempts, idleTime);
+        // Surface the raw signals that drove the state, so the panel isn't a black box.
+        updateBehaviorReadout(typingSpeed, idleTime, deletions);
+        // Update the companion (mood mirrors state; wellbeing nudge tracks the streak).
+        updateCompanion(state);
         // Reset the accumulation window for the next Analyze.
         typedChars = 0; deletionCount = 0; signalWindowStart = Date.now();
 

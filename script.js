@@ -10,6 +10,17 @@ let editorIsDark = true;
 let analysisHistory = [];
 const debugSessions = {};
 
+/* ── Behavioral signals (fed to the cognitive model) ── */
+let lastEditTime      = Date.now();   // updated on every editor change; used for idle_time
+let typedChars        = 0;            // chars inserted since last Analyze (typing_speed)
+let deletionCount     = 0;            // deletion events since last Analyze
+let signalWindowStart = Date.now();   // start of the current accumulation window
+
+/* ── Session persistence keys (localStorage) ── */
+const HISTORY_KEY     = 'cm_history';
+const LAST_RESULT_KEY = 'cm_last_result';
+const LAST_USER_KEY   = 'cm_last_user';
+
 /* ── Tab System ── */
 let tabs = [];
 let activeTabId = null;
@@ -336,9 +347,15 @@ require(['vs/editor/editor.main'], function () {
             `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
     });
 
-    editor.onDidChangeModelContent(() => {
+    editor.onDidChangeModelContent((e) => {
         const val = editor.getValue();
         document.getElementById('charCount').textContent = `${val.length} chars`;
+        lastEditTime = Date.now();   // idle_time is measured from the last edit
+        // Accumulate typing/deletion signals from each change in this event.
+        for (const c of e.changes) {
+            if (c.text.length > 0 && c.rangeLength === 0)      typedChars += c.text.length;  // insertion
+            else if (c.text.length === 0 && c.rangeLength > 0) deletionCount += 1;            // deletion
+        }
         if (activeTabId !== null) {
             const tab = tabs.find(t => t.id === activeTabId);
             if (tab) tab.content = val;
@@ -349,6 +366,9 @@ require(['vs/editor/editor.main'], function () {
 
     // Apply config-based status on load
     updateConfigBadge();
+
+    // Restore persisted session state (history + last stats) across refresh
+    restoreSession();
 });
 
 /* ══════════════════════════════════════════
@@ -511,8 +531,14 @@ async function analyzeCode() {
         const analysis = analyzeCodeStatic(code, lang);
         const hasError = analysis.status === 'error';
 
-        // ── 2. Cognitive model (default behavioral inputs) ──
-        const state = predictCognitiveState(10, 5, 3, 5);
+        // ── 2. Cognitive model (real behavioral inputs) ──
+        const idleTime     = (Date.now() - lastEditTime) / 1000;                 // seconds since last edit
+        const minutes      = Math.max(Date.now() - signalWindowStart, 1) / 60000; // window length, guarded
+        const typingSpeed  = typedChars / minutes;                               // chars typed per minute
+        const deletions    = deletionCount;
+        const state = predictCognitiveState(typingSpeed, deletions, 3, idleTime);
+        // Reset the accumulation window for the next Analyze.
+        typedChars = 0; deletionCount = 0; signalWindowStart = Date.now();
 
         // ── 3. Debug session tracking ──
         if (!debugSessions[userId]) debugSessions[userId] = new DebugSession();
@@ -543,6 +569,7 @@ async function analyzeCode() {
 
         renderResults(data);
         addHistory(data);
+        saveLastResult(data, userId);
         showToast('Analysis complete ✓', 'success');
 
     } catch (err) {
@@ -645,7 +672,46 @@ function addHistory(data) {
     const err = data.error && data.error !== 'None';
     analysisHistory.unshift({ ts, err, score: data.debug_score });
     if (analysisHistory.length > 8) analysisHistory.pop();
+    saveHistory();
     renderHistory();
+}
+
+/* ── Session persistence (survives page refresh) ── */
+function saveHistory() {
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(analysisHistory)); } catch {}
+}
+
+function loadHistory() {
+    try {
+        const stored = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+        if (Array.isArray(stored)) analysisHistory = stored.slice(0, 8);
+    } catch { analysisHistory = []; }
+}
+
+function saveLastResult(data, userId) {
+    try {
+        localStorage.setItem(LAST_RESULT_KEY, JSON.stringify(data));
+        if (userId) localStorage.setItem(LAST_USER_KEY, userId);
+    } catch {}
+}
+
+function restoreSession() {
+    // History panel
+    loadHistory();
+    renderHistory();
+
+    // User ID input
+    try {
+        const lastUser = localStorage.getItem(LAST_USER_KEY);
+        const input = document.getElementById('userId');
+        if (lastUser && input && !input.value) input.value = lastUser;
+    } catch {}
+
+    // Last rendered stats (score / level / attempts / state / AI / hint)
+    try {
+        const last = JSON.parse(localStorage.getItem(LAST_RESULT_KEY) || 'null');
+        if (last) renderResults(last);
+    } catch {}
 }
 
 function renderHistory() {

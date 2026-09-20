@@ -43,11 +43,12 @@ def analyze_student_code(data: dict):
     if user_id not in debug_sessions:
         debug_sessions[user_id] = DebugSession()
     session = debug_sessions[user_id]
-    state   = predict_state(data.get("typing_speed",10), data.get("deletions",5),
-                            data.get("run_count",3), data.get("idle_time",5))
     analysis  = analyze_code(code)
     has_error = analysis["status"] == "error"
     session.record_attempt(has_error)
+    # run_count comes from the backend's own attempt counter, not the client.
+    state   = predict_state(data.get("typing_speed",10), data.get("deletions",5),
+                            session.attempts, data.get("idle_time",5))
     hint  = get_code_hint(code, analysis.get("message","") if has_error else "", state)
     score = session.calculate_score()
     return {

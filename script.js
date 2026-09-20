@@ -212,13 +212,19 @@ function detectAICode(code, lang = 'python') {
    ══════════════════════════════════════════ */
 
 function predictCognitiveState(typing_speed, deletions, run_count, idle_time) {
-    // Expert: fast typing, almost no deletions
-    if (typing_speed >= 35 && deletions <= 2) return 'expert';
-    // Confident: reasonably fast, low deletions
-    if (typing_speed >= 25 && deletions <= 3) return 'confident';
-    // Confused: very slow or long idle time
-    if (typing_speed <= 7 || idle_time >= 25) return 'confused';
-    // Default: struggling
+    // typing_speed is chars/min = typedChars / minutesElapsed, where the window
+    // runs from the previous Analyze. Calibrated from REAL editor use (which
+    // includes reading the AI hint / thinking between rounds), not automated
+    // typing: engaged typing lands ~40-45, diluted/hesitant ~5-12, and
+    // corrections (deletions) run 0-1 when clean up to 40 when floundering.
+    // idle_time is checked FIRST so a long pause always wins over fast typing.
+    // Confused: a long pause (fast burst then stall), or barely making progress.
+    if (idle_time >= 25 || typing_speed <= 8) return 'confused';
+    // Expert: fast, clean typing with almost no corrections.
+    if (typing_speed >= 40 && deletions <= 4) return 'expert';
+    // Confident: a decent pace with only moderate correcting.
+    if (typing_speed >= 20 && deletions <= 12) return 'confident';
+    // Default: slow, or actively typing but with heavy corrections.
     return 'struggling';
 }
 
@@ -531,20 +537,23 @@ async function analyzeCode() {
         const analysis = analyzeCodeStatic(code, lang);
         const hasError = analysis.status === 'error';
 
-        // ── 2. Cognitive model (real behavioral inputs) ──
-        const idleTime     = (Date.now() - lastEditTime) / 1000;                 // seconds since last edit
-        const minutes      = Math.max(Date.now() - signalWindowStart, 1) / 60000; // window length, guarded
-        const typingSpeed  = typedChars / minutes;                               // chars typed per minute
-        const deletions    = deletionCount;
-        const state = predictCognitiveState(typingSpeed, deletions, 3, idleTime);
-        // Reset the accumulation window for the next Analyze.
-        typedChars = 0; deletionCount = 0; signalWindowStart = Date.now();
-
-        // ── 3. Debug session tracking ──
+        // ── 2. Debug session tracking (must precede cognitive state) ──
+        // run_count comes from this session's own attempt counter, not a literal.
+        // Mirrors the reorder in main.py: get/create the session and record the
+        // attempt BEFORE computing cognitive state, so session.attempts is real.
         if (!debugSessions[userId]) debugSessions[userId] = new DebugSession();
         const session = debugSessions[userId];
         session.recordAttempt(hasError);
         const score = session.calculateScore();
+
+        // ── 3. Cognitive model (real behavioral inputs) ──
+        const idleTime     = (Date.now() - lastEditTime) / 1000;                 // seconds since last edit
+        const minutes      = Math.max(Date.now() - signalWindowStart, 1) / 60000; // window length, guarded
+        const typingSpeed  = typedChars / minutes;                               // chars typed per minute
+        const deletions    = deletionCount;
+        const state = predictCognitiveState(typingSpeed, deletions, session.attempts, idleTime);
+        // Reset the accumulation window for the next Analyze.
+        typedChars = 0; deletionCount = 0; signalWindowStart = Date.now();
 
         // ── 4. AI code detection (ported from style_detector.py) ──
         const aiFlag = detectAICode(code, lang);

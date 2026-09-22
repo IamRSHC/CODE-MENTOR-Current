@@ -253,6 +253,11 @@ The error-detection pipeline is **actively in development** and not yet complete
 
 Built during **Noob Hackfest 2026**. Editor by [Monaco](https://microsoft.github.io/monaco-editor/); LLM inference via Google AI Studio, LM Studio, and OpenAI-compatible providers.
 
+## License
+All rights reserved. This repository is public for portfolio/demonstration 
+purposes only. No permission is granted to copy, modify, or redistribute 
+this code without explicit written consent from the author.
+
 <div align="center">
 
 *CodeMentor AI reads the room, not just the code.*
